@@ -6,7 +6,10 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
@@ -23,6 +26,18 @@ public class GatewaySecurityConfig {
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
             .csrf(ServerHttpSecurity.CsrfSpec::disable) // Disable CSRF for your stateless setup
+            .addFilterAfter((exchange, chain) -> 
+            ReactiveSecurityContextHolder.getContext()
+                .map(SecurityContext::getAuthentication)
+                .doOnNext(auth -> {
+                    System.out.println("=== SECURITY DEBUG ===");
+                    System.out.println("User: " + auth.getName());
+                    System.out.println("Authorities: " + auth.getAuthorities());
+                    System.out.println("======================");
+                })
+                .then(chain.filter(exchange)),
+            SecurityWebFiltersOrder.AUTHORIZATION
+        )
             .authorizeExchange(exchanges -> exchanges
                 // 1. Let login and registration requests pass straight through to AUTH-SERVICE
                // .pathMatchers("/auth/login", "/auth/register").permitAll()
