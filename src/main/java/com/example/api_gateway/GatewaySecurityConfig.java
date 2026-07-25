@@ -46,7 +46,7 @@ public class GatewaySecurityConfig {
             		.pathMatchers("/auth/login").permitAll()
                     
                     // 2. Restrict registration so ONLY authenticated users with ROLE_CHILD can access it
-                    .pathMatchers("/auth/register").hasRole("CHILD")
+                    .pathMatchers("/auth/register").hasRole("PARENT")
             		.anyExchange().authenticated()
             )
             // 3. Turn on JWT Validation using the jwk-set-uri specified in application.properties
